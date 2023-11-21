@@ -1,40 +1,44 @@
 <html>
-  <head>
-    <title>Dish Panel</title>
-    <style>
-        a {
-            background-color: black;
-            cursor: pointer;
-            color:white;
-            border-radius: 6px;
-            padding:6px;
-        }
+    <head>
+        <title>Shcherbak Tools</title>
+        <style>
+            a {
+                background-color: black;
+                cursor: pointer;
+                color:white;
+                border-radius: 6px;
+                padding:6px;
+            }
 
-        a:active {
-            color:rgb(0, 0, 0);
-            background-color: rgb(158, 158, 158);
-        }
+            a:active {
+                color:rgb(0, 0, 0);
+                background-color: rgb(158, 158, 158);
+            }
         
-        #text_out small {
-            font-size: 6px;
-            display: block;
-        }
-        div {
-            padding: 10px;
-        }
-      </style>
-  </head>
-  <body>
-    <h1>Requests</h1>
-    <hr />
-    <div>
-        <a id="test_action">Test Action</a>
-    </div>
-    <div>
-      <h3 id="request_status"></h3>
-      <p id="request_url"></p>
-      <p id="text_out"></p>
-    </div>
-    <script src="sidepanel.js"></script>
-  </body>
+            #text_out {
+                font-size: 10px;
+                width: 100%;
+                height: auto;
+            }
+            div {
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="input_count"></div>
+        <div>
+            <a id="test_action">Test Action</a>
+        </div>
+        <hr />
+        <div>
+            <p id="last_hover_input"></p>
+        </div>
+        <hr />
+        <div>
+            <textarea id="text_out" rows="20"></textarea>
+        </div>
+        <div id="urls"></div>
+        <script src="sidepanel.js"></script>
+    </body>
 </html>

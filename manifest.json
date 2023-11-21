@@ -13,23 +13,11 @@
         "sidePanel", 
         "contextMenus"
     ],
-    "devtools_page": "devtools.html",
-    "content_scripts": [
-        {
-            "matches": [
-                "<all_urls>"
-            ],
-            "js": [
-                "content-script.js"
-            ]
-        }
-    ],
+
     "externally_connectable": {
         "matches": ["<all_urls>"]
     },
-    "host_permissions": [
-        "https://www.google.com/*"
-    ],
+    "host_permissions": ["<all_urls>"],
     "icons": {
         "16": "/images/icon-16x16.png",
         "32": "/images/icon-32x32.png",
@@ -40,7 +28,7 @@
         "service_worker": "main.js"
     },
     "action": {
-        "default_popup": "popup.html",
+        "default_title": "Shcherbak Tools",
         "default_icon": {
             "16": "/images/icon-16x16.png",
             "32": "/images/icon-32x32.png",

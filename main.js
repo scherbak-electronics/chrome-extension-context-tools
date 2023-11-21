@@ -1,9 +1,13 @@
+let lastHoverInput = {};
 chrome.runtime.onInstalled.addListener(() => {
     // default state goes here
     // this runs ONE TIME ONLY (unless the user reinstalls your extension)
-    console.log('this runs ONE TIME ONLY (unless the user reinstalls your extension)');
+    console.log('chrome.runtime.onInstalled');
     setupContextMenu();
 });
+
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false })
+     .catch((error) => console.error(error));
 
 // setting state
 chrome.storage.local.set({ default_feature_key: "changeplan"}, function () {
@@ -16,107 +20,98 @@ chrome.storage.local.get("default_feature_key", function (retrieved_data) {
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    console.log('changeInfo.status: ', changeInfo.status);
-    if (changeInfo.status === 'complete' && /^http/.test(tab.url)) {
+    console.log('chrome.tabs.onUpdated: ', tab);
+});
+
+chrome.webRequest.onCompleted.addListener((details) => {
+    console.log('chrome.webRequest.onCompleted: ', details);
+    sidePanelPrintUrl(details.url);
+}, {urls: ["<all_urls>"]}, ['responseHeaders']);
+
+chrome.action.onClicked.addListener(function (tab) {
+    console.log('action (tab): ', tab);
+    chrome.scripting.executeScript({
+        target: {tabId: tab.id},
+        files: ['content-script.js']
+    });
+    chrome.sidePanel.open({ windowId: tab.windowId });
+
+});
+  
+chrome.debugger.onEvent.addListener(function (source, method, params) {
+    sidePanelPrintLine("from debuger: " + params.response + source + method);
+    if (method === 'Network.responseReceived') {
+        console.log('Response received, Perform your desired action with the response data:', params.response);
+        sidePanelPrintLine("from debuger: " + params.response);
+        // Perform your desired action with the response data
     }
 });
 
-function loginToFeatureFlow() {
-    let popUp = document.querySelector('#js--banner');
-    console.log('loginToFeatureFlow popUp: ', popUp);
-    popUp.parentNode.removeChild(popUp);
-}
-function pageLoad() {
-    console.log('pageLoad');
-    setTimeout(() => {
-        loginToFeatureFlow();
-        console.log('2 sec after page load...');
-    }, 2000);
-}
-
-chrome.webRequest.onCompleted.addListener(
-    (details) => {
-        console.log('web request completed: ', details);
-        sidePanelPrintLine(details);
-    },
-    {
-        urls: ["http://*.com/*", "https://*.com/*"]
-    },
-    ['responseHeaders']
-);
-
-chrome.action.onClicked.addListener(function (tab) {
-    if (tab.url.startsWith('http')) {
-        sidePanelPrintLine("tab clicked: " + tab.url);
-      chrome.debugger.attach({ tabId: tab.id }, '1.2', function () {
-        chrome.debugger.sendCommand(
-          { tabId: tab.id },
-          'Network.enable',
-          {},
-          function () {
-            if (chrome.runtime.lastError) {
-              console.error(chrome.runtime.lastError);
-            }
-          }
-        );
-      });
-    } else {
-      console.log('Debugger can only be attached to HTTP/HTTPS pages.');
-    }
-  });
-  
-  chrome.debugger.onEvent.addListener(function (source, method, params) {
-    sidePanelPrintLine("from debuger: " + params.response + source + method);
-    if (method === 'Network.responseReceived') {
-      console.log('Response received, Perform your desired action with the response data:', params.response);
-      sidePanelPrintLine("from debuger: " + params.response);
-    
-      // Perform your desired action with the response data
-    }
-  });
-
-  function setupContextMenu() {
-        chrome.contextMenus.create({
-            id: 'dish_inspect',
-            title: 'Dish Inspect',
-            contexts: ['selection']
-        });
-        chrome.contextMenus.create({
-            id: 'insert_user_name_esttest',
-            title: 'esttest@username.com',
-            contexts: ['editable']
-        });
-        chrome.contextMenus.create({
-            id: 'insert_user_name_wer',
-            title: 'wer@username.com',
-            contexts: ['editable']
-        });
-  }
-
-  chrome.contextMenus.onClicked.addListener((data) => {
-    chrome.runtime.sendMessage({
-      name: 'on-text-out',
-        data: { 
-            text_out: "from context menu" 
-        }
+function setupContextMenu() {
+    chrome.contextMenus.create({
+        id: 'dish_inspect',
+        title: 'Dish Inspect',
+        contexts: ['selection']
     });
-      chrome.runtime.sendMessage({
-          name: 'on-text-out',
-          data: {
-              text_out: JSON.stringify(data, null, 2)
-          }
-      });
-  });
+    chrome.contextMenus.create({
+        id: 'insert_email',
+        title: 'esttest@username.com',
+        contexts: ['editable']
+    });
+    chrome.contextMenus.create({
+        id: 'insert_user_name_wer',
+        title: 'wer@username.com',
+        contexts: ['editable']
+    });
+}
+
+chrome.contextMenus.onClicked.addListener((data) => {
+    if (data.menuItemId === 'insert_email') {
+        sidePanelPrintLine("inserting email");
+        chrome.tabs.query({active: true, lastFocusedWindow: true}).then((tab) => {
+            chrome.tabs.sendMessage(tab[0].id, {
+                name: "insert-to-input",
+                data: lastHoverInput
+            });
+        });
+    } else {
+        sidePanelPrintLine("from context menu");
+        sidePanelPrintLine(JSON.stringify(data, null, 2));
+    }
+});
 
 function sidePanelPrintLine(text) {
     chrome.runtime.sendMessage({
         name: 'on-text-out',
-          data: { 
-              text_out: text
-          }
-      });
+        data: {
+            text_out: text
+        }
+    });
 }
 
-chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
-    sidePanelPrintLine(request.data.text_out);
+function sidePanelPrintUrl(url) {
+    chrome.runtime.sendMessage({
+        name: 'print-url',
+        data: url
+    });
+}
+
+function sidePanelLastHoverInputUpdated(data) {
+    chrome.runtime.sendMessage({
+        name: 'last-hover-input-updated',
+        data: data
+    });
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('sender: ', sender);
+    if (request.name === 'set-last-hover-input') {
+        lastHoverInput = {
+            id: request.inputAttributes.id ?? '',
+            class: request.inputAttributes.class ?? '',
+            name: request.inputAttributes.name ?? ''
+        };
+        sidePanelLastHoverInputUpdated(lastHoverInput);
+    }
+    sendResponse();
 });
