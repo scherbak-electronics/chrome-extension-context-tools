@@ -21,13 +21,16 @@ chrome.storage.local.get("default_feature_key", function (retrieved_data) {
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     console.log('chrome.tabs.onUpdated: ', tab);
+    let pageId = getPageId(tabId);
 });
+
 
 chrome.webRequest.onCompleted.addListener((details) => {
     console.log('chrome.webRequest.onCompleted: ', details);
     sidePanelPrintUrl(details.url);
 }, {urls: ["<all_urls>"]}, ['responseHeaders']);
 
+// click icon in extensions toolbar, inject content script
 chrome.action.onClicked.addListener(function (tab) {
     console.log('action (tab): ', tab);
     chrome.scripting.executeScript({
@@ -38,14 +41,9 @@ chrome.action.onClicked.addListener(function (tab) {
 
 });
   
-chrome.debugger.onEvent.addListener(function (source, method, params) {
-    sidePanelPrintLine("from debuger: " + params.response + source + method);
-    if (method === 'Network.responseReceived') {
-        console.log('Response received, Perform your desired action with the response data:', params.response);
-        sidePanelPrintLine("from debuger: " + params.response);
-        // Perform your desired action with the response data
-    }
-});
+function getPageId(tabId) {
+    return '';
+}
 
 function setupContextMenu() {
     chrome.contextMenus.create({

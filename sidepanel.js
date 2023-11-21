@@ -1,4 +1,4 @@
-chrome.runtime.onMessage.addListener(({ name, data }) => {
+chrome.runtime.onMessage.addListener(({ name, data }, sender, sendresponse) => {
     if (name === 'on-text-out') {
         if (data.text_out) {
             let innerHtml = document.body.querySelector('#text_out').innerHTML;
@@ -24,6 +24,7 @@ chrome.runtime.onMessage.addListener(({ name, data }) => {
             document.body.querySelector('#urls').innerHTML = text + innerHtml;
         }
     }
+    sendresponse();
 });
 
 
